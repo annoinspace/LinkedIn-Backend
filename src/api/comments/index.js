@@ -1,13 +1,25 @@
 import express from "express";
 import createHttpError from "http-errors";
-import multer from "multer";
-import { CloudinaryStorage } from "multer-storage-cloudinary";
-import { v2 as cloudinary } from "cloudinary";
 import commentsModel from "./model.js";
 import postsModel from "../posts/postsModel.js";
 import { cloudinaryUpload } from "../posts/index.js";
 
 const commentsRouter = express.Router();
+
+commentsRouter.get("/:postid", async (req, res, next) => {
+  try {
+    const comments = await commentsModel.find({
+      parentPost: req.params.postid,
+    });
+    if (comments) {
+      res.send(comments);
+    } else {
+      res.send("No comments on this post.");
+    }
+  } catch (err) {
+    next(err);
+  }
+});
 
 commentsRouter.post("/:postid", cloudinaryUpload, async (req, res, next) => {
   try {
@@ -36,6 +48,28 @@ commentsRouter.post("/:postid", cloudinaryUpload, async (req, res, next) => {
         { new: true }
       );
       res.status(201).send({ _id });
+    }
+  } catch (err) {
+    next(err);
+  }
+});
+
+commentsRouter.put("/:commentid", cloudinaryUpload, async (req, res, next) => {
+  try {
+    if (req.file === undefined) {
+      const updatedComment = await commentsModel.findByIdAndUpdate(
+        req.params.commentid,
+        { ...req.body },
+        { new: true, runValidators: true }
+      );
+      res.send(updatedComment);
+    } else {
+      const updatedComment = await commentsModel.findByIdAndUpdate(
+        req.params.commentid,
+        { ...req.body, image: req.file.path },
+        { new: true, runValidators: true }
+      );
+      res.send(updatedComment);
     }
   } catch (err) {
     next(err);
