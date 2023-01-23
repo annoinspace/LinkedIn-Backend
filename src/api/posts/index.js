@@ -19,11 +19,29 @@ const cloudinaryUpload = multer({
 
 postsRouter.get("/", async (req, res, next) => {
   try {
-    const posts = await postsModel.find()
+    const posts = await postsModel.find();
     if (posts.length > 0) {
       res.send(posts);
     } else {
       res.send("There are no posts.");
+    }
+  } catch (err) {
+    next(err);
+  }
+});
+
+postsRouter.get("/:postid", async (req, res, next) => {
+  try {
+    const post = await postsModel.findById(req.params.postid).populate({
+      path: "user",
+      select: "name surname username _id",
+    });
+    if (post) {
+      res.send(post);
+    } else {
+      next(
+        createHttpError(404, `Post with ID ${req.params.postid} not found.`)
+      );
     }
   } catch (err) {
     next(err);
@@ -46,6 +64,21 @@ postsRouter.post("/", cloudinaryUpload, async (req, res, next) => {
       });
       const { _id } = await newPost.save();
       res.status(201).send({ _id });
+    }
+  } catch (err) {
+    next(err);
+  }
+});
+
+postsRouter.put("/:postid/image", cloudinaryUpload, async (req, res, next) => {
+  try {
+    const updatedPost = await postsModel.findByIdAndUpdate(
+      req.params.postid,
+      { image: req.file.path },
+      { new: true, runValidators: true }
+    );
+    if (updatedPost) {
+      res.send(updatedPost);
     }
   } catch (err) {
     next(err);

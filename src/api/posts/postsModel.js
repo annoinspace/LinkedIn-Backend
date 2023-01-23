@@ -11,6 +11,7 @@ const postSchema = new Schema(
     name: { type: String, required: true },
     surname: { type: String, required: true },
     image: { type: String, required: false },
+
   },
   { timestamps: true }
 );
