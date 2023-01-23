@@ -9,6 +9,7 @@ import {
 } from "./errorHandlers.js";
 import postsRouter from "./api/posts/index.js";
 import usersRouter from "./api/users/index.js";
+import commentsRouter from "./api/comments/index.js";
 
 const server = express();
 const port = process.env.PORT;
@@ -18,6 +19,7 @@ server.use(express.json());
 
 server.use("/posts", postsRouter);
 server.use("/users", usersRouter);
+server.use("/comments", commentsRouter);
 
 server.use(badRequestHandler);
 server.use(notFoundHandler);

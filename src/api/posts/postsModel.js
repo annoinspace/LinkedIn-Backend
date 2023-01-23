@@ -11,7 +11,7 @@ const postSchema = new Schema(
     name: { type: String, required: true },
     surname: { type: String, required: true },
     image: { type: String, required: false },
-
+    comments: [{ type: Schema.Types.ObjectId, ref: "Comments" }],
   },
   { timestamps: true }
 );

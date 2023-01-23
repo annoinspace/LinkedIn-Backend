@@ -8,7 +8,7 @@ import { v2 as cloudinary } from "cloudinary";
 
 const postsRouter = express.Router();
 
-const cloudinaryUpload = multer({
+export const cloudinaryUpload = multer({
   storage: new CloudinaryStorage({
     cloudinary,
     params: {
@@ -19,7 +19,15 @@ const cloudinaryUpload = multer({
 
 postsRouter.get("/", async (req, res, next) => {
   try {
-    const posts = await postsModel.find();
+    const posts = await postsModel
+      .find()
+      .populate({
+        path: "user",
+        select: "name surname username _id",
+      })
+      .populate({
+        path: "comments",
+      });
     if (posts.length > 0) {
       res.send(posts);
     } else {
