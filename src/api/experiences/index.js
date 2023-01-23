@@ -1,26 +1,25 @@
-// experiences routes
-
 // – GET https://yourapi.herokuapp.com/api/profile/:userName/experiences/CSV
 
 // Download the experiences as a CSV
 
 import express from "express"
 import ExperiencesModel from "./experiencesModel.js"
+import UsersModel from "../users/model.js"
 import createHttpError from "http-errors"
 
 const experiencesRouter = express.Router()
 
 experiencesRouter.get("/:userId/experiences", async (req, res, next) => {
   try {
-    const experience = await ExperiencesModel.findById(req.params.userId)
-    if (experience) {
-      if (experience.experiences.length === 0) {
-        res.send("No experiences found for this experience.")
+    const user = await UsersModel.findById(req.params.userId)
+    if (user) {
+      if (user.experiences.length === 0) {
+        res.send(`User ${user.username} has no experiences`)
       } else {
-        res.send(experience.experiences)
+        res.send(user.experiences)
       }
     } else {
-      next(createHttpError(404, `experience with id ${req.params.userId} not found!`))
+      next(createHttpError(404, `user with id ${req.params.userId} not found!`))
     }
   } catch (error) {
     console.log(error)
@@ -30,19 +29,20 @@ experiencesRouter.get("/:userId/experiences", async (req, res, next) => {
 
 experiencesRouter.get("/:userId/experiences/:expId", async (req, res, next) => {
   try {
-    const experience = await ExperiencesModel.findById(req.params.userId)
-    if (experience) {
-      const selectedExperience = experience.experiences.find(
-        (experience) => experience._id.toString() === req.params.expId
-      )
+    const user = await UsersModel.findById(req.params.userId)
 
+    if (user) {
+      const selectedExperience = user.experiences.find(
+        (experience) => experience._id.toString() === req.params.expId // You CANNOT compare a string(req.params.productId) with an ObjectId (product._id) --> you have to either convert _id into string or ProductId into ObjectId
+      )
+      // console.log(user.experiences)
       if (selectedExperience) {
         res.send(selectedExperience)
       } else {
-        next(createHttpError(404, `experience with id ${req.params.expId} not found!`))
+        next(createHttpError(404, `experience with id ${req.body.expId} not found!`))
       }
     } else {
-      next(createHttpError(404, `experience with id ${req.params.userId} not found!`))
+      next(createHttpError(404, `user with id ${req.params.userId} not found!`))
     }
   } catch (error) {
     next(error)
@@ -51,11 +51,11 @@ experiencesRouter.get("/:userId/experiences/:expId", async (req, res, next) => {
 
 experiencesRouter.post("/:userId/experiences", async (req, res, next) => {
   try {
-    const experience = req.body // Get the experience from the req.body
+    const experience = req.body
 
     if (experience) {
       const experienceToInsert = experience
-      const updatedExperience = await ExperiencesModel.findByIdAndUpdate(
+      const updatedExperience = await UsersModel.findByIdAndUpdate(
         req.params.userId, // WHO
         { $push: { experiences: experienceToInsert } }, // HOW
         { new: true, runValidators: true } // OPTIONS
@@ -64,11 +64,11 @@ experiencesRouter.post("/:userId/experiences", async (req, res, next) => {
       if (updatedExperience) {
         res.send(updatedExperience)
       } else {
-        next(createHttpError(404, `experience with id ${req.params.userId} not found!`))
+        next(createHttpError(404, `user with id ${req.params.userId} not found!`))
       }
     } else {
       // 4. In case of either book not found or experience not found --> 404
-      next(createHttpError(404, `experience not found!`))
+      next(createHttpError(404, `user not found!`))
     }
   } catch (error) {
     next(error)
