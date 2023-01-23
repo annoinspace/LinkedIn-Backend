@@ -1,51 +1,32 @@
-import express from "express"
-import listEndpoints from "express-list-endpoints"
-import cors from "cors"
-import { badRequestHandler, notFoundHandler, genericErrorHandler } from "./errorHandlers.js"
-import mongoose from "mongoose"
+import express from "express";
+import listEndpoints from "express-list-endpoints";
+import cors from "cors";
+import mongoose from "mongoose";
+import {
+  badRequestHandler,
+  genericErrorHandler,
+  notFoundHandler,
+} from "./errorHandlers.js";
+import postsRouter from "./api/posts/index.js";
 
-const server = express()
+const server = express();
+const port = process.env.PORT;
 
-const port = process.env.PORT
+server.use(cors());
+server.use(express.json());
 
-// ---------------- WHITELIST FOR CORS ------------------
+server.use("/posts", postsRouter);
 
-const whitelist = [process.env.FE_DEV_URL, process.env.FE_PROD_URL]
+server.use(badRequestHandler);
+server.use(notFoundHandler);
+server.use(genericErrorHandler);
 
-const corsOptions = {
-  origin: (origin, corsNext) => {
-    console.log("-----CURRENT ORIGIN -----", origin)
-    if (!origin || whitelist.indexOf(origin) !== -1) {
-      corsNext(null, true)
-    } else {
-      corsNext(createHttpError(400, `Origin ${origin} is not in the whitelist!`))
-    }
-  }
-}
+mongoose.connect(process.env.MONGO_URL);
 
-server.use(express.json())
-server.use(cors(corsOptions))
-// ****************** ENDPOINTS ********************
-
-// ****************** ERROR HANDLERS ****************
-server.use(badRequestHandler) // 400
-server.use(notFoundHandler) // 404
-server.use(genericErrorHandler) // 500
-
-server.listen(port, () => {
-  console.table(listEndpoints(server))
-  console.log("server is running on port:", port)
-})
-
-// -------------------- use mongoose server after connecting to mongo
-
-// mongoose.set("strictQuery", false)
-// mongoose.connect(process.env.MONGO_URL)
-
-// mongoose.connection.on("connected", () => {
-//   console.log("connected to mongo!")
-//   server.listen(port, () => {
-//     console.table(listEndpoints(server))
-//     console.log("server is running on port:", port)
-//   })
-// })
+mongoose.connection.on("connected", () => {
+  console.log("Connected to MongoDB");
+  server.listen(port, () => {
+    console.table(listEndpoints(server));
+    console.log(`Server is running on port ${port}`);
+  });
+});
