@@ -48,6 +48,17 @@ postsRouter.get("/:postid", async (req, res, next) => {
   }
 });
 
+postsRouter.get("/user/:userid", async (req, res, next) => {
+  try {
+    const posts = await postsModel.find({ user: req.params.userid });
+    if (posts) {
+      res.send(posts);
+    }
+  } catch (err) {
+    next(err);
+  }
+});
+
 postsRouter.post("/", cloudinaryUpload, async (req, res, next) => {
   try {
     if (req.file === undefined) {
@@ -90,6 +101,24 @@ postsRouter.put("/:postid", cloudinaryUpload, async (req, res, next) => {
       if (updatedPost) {
         res.send(updatedPost);
       }
+    }
+  } catch (err) {
+    next(err);
+  }
+});
+
+postsRouter.delete("/:postid", async (req, res, next) => {
+  try {
+    const deletedPost = await postsModel.findByIdAndDelete(req.params.postid);
+    if (deletedPost) {
+      res.status(204).send();
+    } else {
+      next(
+        createHttpError(
+          404,
+          `Post with ID ${req.params.postid} not found, cannot delete.`
+        )
+      );
     }
   } catch (err) {
     next(err);
