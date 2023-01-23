@@ -32,20 +32,20 @@ server.use(badRequestHandler) // 400
 server.use(notFoundHandler) // 404
 server.use(genericErrorHandler) // 500
 
-server.listen(port, () => {
-  console.table(listEndpoints(server))
-  console.log("server is running on port:", port)
-})
+// server.listen(port, () => {
+//   console.table(listEndpoints(server))
+//   console.log("server is running on port:", port)
+// })
 
 // -------------------- use mongoose server after connecting to mongo
 
-// mongoose.set("strictQuery", false)
-// mongoose.connect(process.env.MONGO_URL)
+mongoose.set("strictQuery", false)
+mongoose.connect(process.env.MONGO_URL)
 
-// mongoose.connection.on("connected", () => {
-//   console.log("connected to mongo!")
-//   server.listen(port, () => {
-//     console.table(listEndpoints(server))
-//     console.log("server is running on port:", port)
-//   })
-// })
+mongoose.connection.on("connected", () => {
+  console.log("connected to mongo!")
+  server.listen(port, () => {
+    console.table(listEndpoints(server))
+    console.log("server is running on port:", port)
+  })
+})
