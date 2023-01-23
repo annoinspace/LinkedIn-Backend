@@ -1,50 +1,54 @@
-import express from "express";
-import listEndpoints from "express-list-endpoints";
-import cors from "cors";
-import dotenv from "dotenv";
-dotenv.config();
-import {
-  badRequestHandler,
-  notFoundHandler,
-  genericErrorHandler,
-} from "./errorHandlers.js";
+import express from "express"
+import listEndpoints from "express-list-endpoints"
+import cors from "cors"
+import dotenv from "dotenv"
+dotenv.config()
+import { badRequestHandler, notFoundHandler, genericErrorHandler } from "./errorHandlers.js"
 
-import productsRouter from "./api/posts/index.js";
-import usersRouter from "./api/users/index.js";
-import mongoose from "mongoose";
+import productsRouter from "./api/posts/index.js"
+import usersRouter from "./api/users/index.js"
+import mongoose from "mongoose"
 
-const server = express();
-const port = process.env.PORT || 3001;
-const whitelist = [process.env.FE_DEV_URL, process.env.FE_PROD_URL];
+const server = express()
+const port = process.env.PORT || 3001
+const whitelist = [process.env.FE_DEV_URL, process.env.FE_PROD_URL]
 // ---------------- WHITELIST FOR CORS ------------------
 const corsOptions = {
   origin: (origin, corsNext) => {
-    console.log("CURRENT ORIGIN: ", origin);
+    console.log("CURRENT ORIGIN: ", origin)
     if (!origin || whitelist.indexOf(origin) !== -1) {
-      corsNext(null, true);
+      corsNext(null, true)
     } else {
-      corsNext(
-        createHttpError(400, `Origin ${origin} is not in the whitelist!`)
-      );
+      corsNext(createHttpError(400, `Origin ${origin} is not in the whitelist!`))
     }
-  },
-};
-server.use(cors());
-server.use(express.json());
+  }
+}
+server.use(cors())
+server.use(express.json())
 
-server.use("/posts", productsRouter);
-server.use("/users", usersRouter);
+server.use("/posts", productsRouter)
+server.use("/users", usersRouter)
 
-server.use(badRequestHandler);
-server.use(notFoundHandler);
-server.use(genericErrorHandler);
+server.use(badRequestHandler)
+server.use(notFoundHandler)
+server.use(genericErrorHandler)
 
-mongoose.connect(process.env.MONGO_URL);
+mongoose.connect(process.env.MONGO_URL)
+
+// server.listen(port, () => {
+//   console.table(listEndpoints(server))
+//   console.log("server is running on port:", port)
+// })
+
+// -------------------- use mongoose server after connecting to mongo
+
+mongoose.set("strictQuery", false)
+mongoose.connect(process.env.MONGO_URL)
 
 mongoose.connection.on("connected", () => {
-  console.log("Successfully connected to Mongo!");
+  console.log("connected to mongo!")
   server.listen(port, () => {
-    console.table(listEndpoints(server));
-    console.log(`Server is running on port ${port}`);
-  });
-});
+    console.table(listEndpoints(server))
+    console.log("server is running on port:", port)
+  })
+})

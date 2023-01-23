@@ -1,110 +1,147 @@
-import express from "express";
-import experienceModel from "./model.js";
-import createHttpError from "http-errors";
-import q2m from "query-to-mongo";
-const experiencesRouter = express.Router();
+// experiences routes
 
-// experience
+// – GET https://yourapi.herokuapp.com/api/profile/:userName/experiences/CSV
 
-experiencesRouter.experience("/", async (req, res, next) => {
+// Download the experiences as a CSV
+
+import express from "express"
+import ExperiencesModel from "./experiencesModel.js"
+import createHttpError from "http-errors"
+
+const experiencesRouter = express.Router()
+
+experiencesRouter.get("/:userId/experiences", async (req, res, next) => {
   try {
-    const newExperience = new experienceModel(req.body);
-    const { _id } = await newExperience.save();
-    res.status(201).send({ _id });
+    const experience = await ExperiencesModel.findById(req.params.userId)
+    if (experience) {
+      if (experience.experiences.length === 0) {
+        res.send("No experiences found for this experience.")
+      } else {
+        res.send(experience.experiences)
+      }
+    } else {
+      next(createHttpError(404, `experience with id ${req.params.userId} not found!`))
+    }
   } catch (error) {
-    next(error);
+    console.log(error)
+    next(error)
   }
-});
+})
 
-// GET
-
-experiencesRouter.get("/", async (req, res, next) => {
+experiencesRouter.get("/:userId/experiences/:expId", async (req, res, next) => {
   try {
-    const mongoQuery = q2m(req.query);
-    const total = await experienceModel.countDocuments(mongoQuery.criteria);
-    console.log(total);
-    const experiences = await experienceModel
-      .find(mongoQuery.criteria, mongoQuery.options.fields)
-      .sort(mongoQuery.options.sort)
-      .skip(mongoQuery.options.skip)
-      .limit(mongoQuery.options.limit);
-    res.status(200).send({
-      links: mongoQuery.links(total),
-      total,
-      totalPages: Math.ceil(total / mongoQuery.options.limit),
-      experiences,
-    });
+    const experience = await ExperiencesModel.findById(req.params.userId)
+    if (experience) {
+      const selectedExperience = experience.experiences.find(
+        (experience) => experience._id.toString() === req.params.expId
+      )
+
+      if (selectedExperience) {
+        res.send(selectedExperience)
+      } else {
+        next(createHttpError(404, `experience with id ${req.params.expId} not found!`))
+      }
+    } else {
+      next(createHttpError(404, `experience with id ${req.params.userId} not found!`))
+    }
   } catch (error) {
-    next(error);
+    next(error)
   }
-});
+})
 
-// GET SPECIFIC
-
-experiencesRouter.get("/:experienceId", async (req, res, next) => {
+experiencesRouter.post("/:userId/experiences", async (req, res, next) => {
   try {
-    const experience = await experienceModel.findById(req.params.experienceId);
+    const experience = req.body // Get the experience from the req.body
 
     if (experience) {
-      res.send(experience);
+      const experienceToInsert = experience
+      const updatedExperience = await ExperiencesModel.findByIdAndUpdate(
+        req.params.userId, // WHO
+        { $push: { experiences: experienceToInsert } }, // HOW
+        { new: true, runValidators: true } // OPTIONS
+      )
+
+      if (updatedExperience) {
+        res.send(updatedExperience)
+      } else {
+        next(createHttpError(404, `experience with id ${req.params.userId} not found!`))
+      }
     } else {
-      next(
-        createHttpError(
-          404,
-          `experience with id ${req.params.experienceId} not found`
-        )
-      );
+      // 4. In case of either book not found or experience not found --> 404
+      next(createHttpError(404, `experience not found!`))
     }
   } catch (error) {
-    next(error);
+    next(error)
   }
-});
+})
 
-// PUT
-
-experiencesRouter.put("/:experienceId", async (req, res, next) => {
+experiencesRouter.put("/:userId/experiences/:expId", async (req, res, next) => {
   try {
-    const updatedexperience = await experienceModel.findByIdAndUpdate(
-      req.params.experienceId,
-      req.body,
-      { new: true, runValidators: true }
-    );
+    const experience = req.body // Get the experience edit from the req.body
 
-    if (updatedexperience) {
-      res.send(updatedexperience);
+    if (experience) {
+      // Find the experience by id and update it with the new experience data
+      const updatedExperience = await ExperiencesModel.findOneAndUpdate(
+        { "experiences._id": req.params.expId },
+        { $set: { "experiences.$": experience } },
+        { new: true, runValidators: true } // OPTIONS
+      )
+
+      if (updatedExperience) {
+        res.send(updatedExperience)
+      } else {
+        next(createHttpError(404, `experience with id ${req.params.expId} not found!`))
+      }
     } else {
-      next(
-        createHttpError(
-          404,
-          `experience with id ${req.params.experienceId} not found`
-        )
-      );
+      next(createHttpError(404, `experience not found!`))
     }
   } catch (error) {
-    next(error);
+    next(error)
   }
-});
+})
 
-// DELETE
+// ----------------------------------------- adding experience image
 
-experiencesRouter.delete("/:experienceId", async (req, res, next) => {
+experiencesRouter.patch("/:userId/experiences/:expId/picture", async (req, res, next) => {
   try {
-    const deletedexperience = await experienceModel.findByIdAndDelete(
-      req.params.experienceId
-    );
-    if (deletedexperience) {
-      res.status(204).send();
+    const experienceImage = req.file // Get the experience picture from the req.file
+
+    if (experienceImage) {
+      // Find the experience by id and update it with the new experience data
+      const updatedExperience = await ExperiencesModel.findOneAndUpdate(
+        { "experiences._id": req.params.expId },
+        { $set: { "experiences.$": experienceImage } },
+        { new: true, runValidators: true } // OPTIONS
+      )
+
+      if (updatedExperience) {
+        res.send(updatedExperience)
+      } else {
+        next(createHttpError(404, `experience with id ${req.params.expId} not found!`))
+      }
     } else {
-      next(
-        createHttpError(
-          404,
-          `experience with id ${req.params.experienceId} not found`
-        )
-      );
+      next(createHttpError(404, `experience not found!`))
     }
   } catch (error) {
-    next(error);
+    next(error)
   }
-});
+})
 
-export default experiencesRouter;
+experiencesRouter.delete("/:userId/experiences/:expId", async (req, res, next) => {
+  try {
+    const updatedExperience = await ExperiencesModel.findByIdAndUpdate(
+      req.params.userId, // WHO
+      { $pull: { experiences: { _id: req.params.expId } } }, // HOW
+      { new: true } // OPTIONS
+    )
+    if (updatedExperience) {
+      res.send(updatedExperience)
+    } else {
+      next(createHttpError(404, `experience with id ${req.params.userId} not found!`))
+    }
+  } catch (error) {
+    next(error)
+  }
+})
+
+export default experiencesRouter
