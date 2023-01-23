@@ -70,15 +70,26 @@ postsRouter.post("/", cloudinaryUpload, async (req, res, next) => {
   }
 });
 
-postsRouter.put("/:postid/image", cloudinaryUpload, async (req, res, next) => {
+postsRouter.put("/:postid", cloudinaryUpload, async (req, res, next) => {
   try {
-    const updatedPost = await postsModel.findByIdAndUpdate(
-      req.params.postid,
-      { image: req.file.path },
-      { new: true, runValidators: true }
-    );
-    if (updatedPost) {
-      res.send(updatedPost);
+    if (req.file === undefined) {
+      const updatedPost = await postsModel.findByIdAndUpdate(
+        req.params.postid,
+        req.body,
+        { new: true, runValidators: true }
+      );
+      if (updatedPost) {
+        res.send(updatedPost);
+      }
+    } else {
+      const updatedPost = await postsModel.findByIdAndUpdate(
+        req.params.postid,
+        { ...req.body, image: req.file.path },
+        { new: true, runValidators: true }
+      );
+      if (updatedPost) {
+        res.send(updatedPost);
+      }
     }
   } catch (err) {
     next(err);
