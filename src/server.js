@@ -8,6 +8,7 @@ import { badRequestHandler, notFoundHandler, genericErrorHandler } from "./error
 import productsRouter from "./api/posts/index.js"
 import usersRouter from "./api/users/index.js"
 import mongoose from "mongoose"
+import experiencesRouter from "./api/experiences/index.js"
 
 const server = express()
 const port = process.env.PORT || 3001
@@ -28,17 +29,13 @@ server.use(express.json())
 
 server.use("/posts", productsRouter)
 server.use("/users", usersRouter)
+server.use("/users", experiencesRouter)
 
 server.use(badRequestHandler)
 server.use(notFoundHandler)
 server.use(genericErrorHandler)
 
 mongoose.connect(process.env.MONGO_URL)
-
-// server.listen(port, () => {
-//   console.table(listEndpoints(server))
-//   console.log("server is running on port:", port)
-// })
 
 // -------------------- use mongoose server after connecting to mongo
 
