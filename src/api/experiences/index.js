@@ -1,13 +1,5 @@
 // experiences routes
 
-// – DELETE https://yourapi.herokuapp.com/api/users/{userId}/experiences/{expId}
-
-// Delete a specific experience
-
-// – POST https://yourapi.herokuapp.com/api/profile/:userName/experiences/:expId/picture
-
-// Change the experience picture
-
 // – GET https://yourapi.herokuapp.com/api/profile/:userName/experiences/CSV
 
 // Download the experiences as a CSV
@@ -92,6 +84,33 @@ experiencesRouter.put("/:userId/experiences/:expId", async (req, res, next) => {
       const updatedExperience = await ExperiencesModel.findOneAndUpdate(
         { "experiences._id": req.params.expId },
         { $set: { "experiences.$": experience } },
+        { new: true, runValidators: true } // OPTIONS
+      )
+
+      if (updatedExperience) {
+        res.send(updatedExperience)
+      } else {
+        next(createHttpError(404, `experience with id ${req.params.expId} not found!`))
+      }
+    } else {
+      next(createHttpError(404, `experience not found!`))
+    }
+  } catch (error) {
+    next(error)
+  }
+})
+
+// ----------------------------------------- adding experience image
+
+experiencesRouter.patch("/:userId/experiences/:expId/picture", async (req, res, next) => {
+  try {
+    const experienceImage = req.file // Get the experience picture from the req.file
+
+    if (experienceImage) {
+      // Find the experience by id and update it with the new experience data
+      const updatedExperience = await ExperiencesModel.findOneAndUpdate(
+        { "experiences._id": req.params.expId },
+        { $set: { "experiences.$": experienceImage } },
         { new: true, runValidators: true } // OPTIONS
       )
 
