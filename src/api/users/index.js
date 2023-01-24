@@ -15,7 +15,7 @@ export const cloudinaryUpload = multer({
       folder: "build-week/pfp-images",
     },
   }),
-}).single("user");
+}).single("pfp");
 
 // GET
 
