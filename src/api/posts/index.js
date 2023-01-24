@@ -23,7 +23,7 @@ postsRouter.get("/", async (req, res, next) => {
       .find()
       .populate({
         path: "user",
-        select: "name surname username _id title pfp",
+        select: "name surname username _id job pfp",
       })
       .populate({
         path: "comments",
