@@ -37,6 +37,7 @@ experiencesRouter.get("/:userId/experiences", async (req, res, next) => {
     next(error)
   }
 })
+
 experiencesRouter.get("/:userId/experiences/csv", async (req, res, next) => {
   try {
     const user = await UsersModel.findById(req.params.userId)
@@ -45,9 +46,14 @@ experiencesRouter.get("/:userId/experiences/csv", async (req, res, next) => {
       const opts = {
         fields: ["role", "company", "startDate"]
       }
-      const parser = await new Parser(opts)
+      const parser = new Parser(opts)
       const csv = parser.parse(myData)
       console.log(csv)
+      res.setHeader("Content-Disposition", "attachment; filename=experiences.csv")
+      // const destination = res
+      // pipeline(user, parser, destination, (err) => {
+      //   if (err) console.log(err)
+      // })
       res.send(csv)
     } else {
       res.send({ message: "user not found" })
