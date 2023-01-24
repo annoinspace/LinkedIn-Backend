@@ -37,7 +37,7 @@ server.use(express.json());
 server.use("/posts", postsRouter);
 server.use("/users", usersRouter);
 server.use("/users", experiencesRouter);
-server.use("/comments", commentsRouter);
+server.use("/comments", commentsRouter)
 
 server.use(badRequestHandler);
 server.use(notFoundHandler);
