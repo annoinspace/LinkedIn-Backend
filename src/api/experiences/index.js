@@ -1,11 +1,15 @@
-import express from "express";
-import UsersModel from "../users/model.js";
-import createHttpError from "http-errors";
-import multer from "multer";
-import { CloudinaryStorage } from "multer-storage-cloudinary";
-import { v2 as cloudinary } from "cloudinary";
-import json2csv from "json2csv";
+
+import express from "express"
+import UsersModel from "../users/model.js"
+import createHttpError from "http-errors"
+import multer from "multer"
+import { CloudinaryStorage } from "multer-storage-cloudinary"
+import { v2 as cloudinary } from "cloudinary"
+import json2csv from "json2csv"
+import { Parser } from "@json2csv/plainjs"
+
 import { pipeline } from "stream";
+
 
 const experiencesRouter = express.Router();
 
@@ -36,6 +40,54 @@ experiencesRouter.get("/:userId/experiences", async (req, res, next) => {
     console.log(error);
     next(error);
   }
+
+})
+
+// experiencesRouter.get("/:userId/experiences/csv", async (req, res, next) => {
+//   try {
+//     const source = await UsersModel.findById(req.params.userId)
+//     if (source) {
+//       if (source.experiences.length === 0) {
+//         res.send(`User ${source.username} has no experiences`)
+//       } else {
+//         res.setHeader("Content-Disposition", "attachment; filename=experiences.csv")
+//         const transform = new json2csv.Transform({ fields: ["_id", "role", "company"] })
+//         const destination = res
+//         pipeline(source, transform, destination, (err) => {
+//           if (err) console.log(err)
+//         })
+//         res.send()
+//       }
+//     } else {
+//       next(createHttpError(404, `user with id ${req.params.userId} not found!`))
+//     }
+//   } catch (error) {
+//     console.log(error)
+//     next(error)
+//   }
+// })
+
+experiencesRouter.get("/:userId/experiences/csv", async (req, res, next) => {
+  try {
+    const user = await UsersModel.findById(req.params.userId)
+    if (user) {
+      const myData = user.experiences
+      const opts = {
+        fields: ["role", "company", "startDate"]
+      }
+      const parser = await new Parser(opts)
+      const csv = parser.parse(myData)
+      console.log(csv)
+      res.send(csv)
+    } else {
+      res.send({ message: "user not found" })
+    }
+  } catch (err) {
+    console.error(err)
+  }
+})
+
+
 });
 experiencesRouter.get("/:userId/experiences/csv", async (req, res, next) => {
   try {
@@ -58,8 +110,19 @@ experiencesRouter.get("/:userId/experiences/csv", async (req, res, next) => {
         pipeline(source, transform, destination, (err) => {
           if (err) console.log(err);
         });
+
       }
+      const parser = await new Parser(opts)
+      const csv = parser.parse(myData)
+      console.log(csv)
+      res.send(csv)
     } else {
+
+      res.send({ message: "user not found" })
+    }
+  } catch (err) {
+    console.error(err)
+
       next(
         createHttpError(404, `user with id ${req.params.userId} not found!`)
       );
@@ -67,6 +130,7 @@ experiencesRouter.get("/:userId/experiences/csv", async (req, res, next) => {
   } catch (error) {
     console.log(error);
     next(error);
+
   }
 });
 
