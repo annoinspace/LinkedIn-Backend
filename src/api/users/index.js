@@ -1,19 +1,21 @@
 import express from "express";
 import usersModel from "./model.js";
 import createHttpError from "http-errors";
+import { pipeline } from "stream";
+import { createGzip } from "zlib";
+import multer from "multer";
+import { CloudinaryStorage } from "multer-storage-cloudinary";
+import { v2 as cloudinary } from "cloudinary";
 const usersRouter = express.Router();
 
-// POST
-
-usersRouter.post("/", async (req, res, next) => {
-  try {
-    const newUser = new usersModel(req.body);
-    const { _id } = await newUser.save();
-    res.status(201).send({ _id });
-  } catch (error) {
-    next(error);
-  }
-});
+export const cloudinaryUpload = multer({
+  storage: new CloudinaryStorage({
+    cloudinary,
+    params: {
+      folder: "build-week/pfp-images",
+    },
+  }),
+}).single("pfp");
 
 // GET
 
@@ -91,6 +93,44 @@ usersRouter.delete("/:userId", async (req, res, next) => {
   } catch (error) {
     next(error);
   }
+});
+
+//CV (pdf)
+// usersRouter.get("/:userId/cv", async (req, res, next) => {
+//   res.setHeader("Content-Disposition", `attachment; filename=CV.pdf`);
+//   const users = await usersModel.find();
+//   const index = users.findIndex((user) => user.id === req.params.userId);
+//   if (index !== -1) {
+//     const CV = users[index];
+//     console.log(CV);
+//     const source = await getPDFReadableStream(CV);
+//     const destination = res;
+//     pipeline(source, destination, (err) => {
+//       if (err) console.log(err);
+//     });
+//   }
+// });
+
+// POST
+
+usersRouter.post("/", async (req, res, next) => {
+  try {
+    const newUser = new usersModel(req.body);
+    const { _id } = await newUser.save();
+    res.status(201).send({ _id });
+  } catch (error) {
+    next(error);
+  }
+});
+
+//
+usersRouter.post("/:userId/pfp", cloudinaryUpload, async (req, res, next) => {
+  const updatedUser = await usersModel.findByIdAndUpdate(req.params.userId, {
+    ...req.body,
+    pfp: req.file.path,
+  });
+  const { _id } = await updatedUser.save();
+  res.status(201).send({ _id });
 });
 
 export default usersRouter;
