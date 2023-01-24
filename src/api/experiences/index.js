@@ -1,13 +1,22 @@
-// – GET https://yourapi.herokuapp.com/api/profile/:userName/experiences/CSV
-
-// Download the experiences as a CSV
-
 import express from "express"
-import ExperiencesModel from "./experiencesModel.js"
 import UsersModel from "../users/model.js"
 import createHttpError from "http-errors"
+import multer from "multer"
+import { CloudinaryStorage } from "multer-storage-cloudinary"
+import { v2 as cloudinary } from "cloudinary"
+import json2csv from "json2csv"
+import { pipeline } from "stream"
 
 const experiencesRouter = express.Router()
+
+const cloudinaryUploader = multer({
+  storage: new CloudinaryStorage({
+    cloudinary,
+    params: {
+      folder: "build-week/experience-imgs"
+    }
+  })
+}).single("image")
 
 experiencesRouter.get("/:userId/experiences", async (req, res, next) => {
   try {
@@ -17,6 +26,29 @@ experiencesRouter.get("/:userId/experiences", async (req, res, next) => {
         res.send(`User ${user.username} has no experiences`)
       } else {
         res.send(user.experiences)
+      }
+    } else {
+      next(createHttpError(404, `user with id ${req.params.userId} not found!`))
+    }
+  } catch (error) {
+    console.log(error)
+    next(error)
+  }
+})
+experiencesRouter.get("/:userId/experiences/csv", async (req, res, next) => {
+  try {
+    const source = await UsersModel.findById(req.params.userId)
+    if (source) {
+      if (source.experiences.length === 0) {
+        res.send(`User ${source.username} has no experiences`)
+      } else {
+        res.setHeader("Content-Disposition", "attachment; filename=experiences.csv")
+        const transform = new json2csv.Transform({ fields: ["_id", "role", "company"] })
+        const destination = res
+        pipeline(source, transform, destination, (err) => {
+          if (err) console.log(err)
+        })
+        res.send()
       }
     } else {
       next(createHttpError(404, `user with id ${req.params.userId} not found!`))
@@ -49,26 +81,56 @@ experiencesRouter.get("/:userId/experiences/:expId", async (req, res, next) => {
   }
 })
 
+experiencesRouter.post("/:userId/experiences/:expId/picture", cloudinaryUploader, async (req, res, next) => {
+  try {
+    const experienceImage = req.file.path
+    const user = await UsersModel.findById(req.params.userId)
+    if (user) {
+      // Find the experience by id and update it with the new experience image
+      const index = user.experiences.findIndex((experience) => experience._id.toString() === req.params.expId)
+
+      if (index !== -1) {
+        console.log({ ...user.experiences[index] })
+        user.experiences[index] = {
+          ...user.experiences[index].toObject(),
+          image: experienceImage
+        }
+        await user.save()
+        res.send(user)
+      } else {
+        next(createHttpError(404, `experience with id ${req.params.expId} not found!`))
+      }
+    } else {
+      next(createHttpError(404, `experience not found!`))
+    }
+  } catch (error) {
+    next(error)
+  }
+})
+
 experiencesRouter.post("/:userId/experiences", async (req, res, next) => {
   try {
-    const experience = req.body
+    const user = await UsersModel.findById(req.params.userId)
+    if (user) {
+      const experienceToInsert = {
+        ...req.body,
+        createdAt: new Date(),
+        image: ""
+      }
+      console.log("Experience TO Insert: ", experienceToInsert)
 
-    if (experience) {
-      const experienceToInsert = experience
-      const updatedExperience = await UsersModel.findByIdAndUpdate(
+      const updatedUser = await UsersModel.findByIdAndUpdate(
         req.params.userId, // WHO
         { $push: { experiences: experienceToInsert } }, // HOW
         { new: true, runValidators: true } // OPTIONS
       )
-
-      if (updatedExperience) {
-        res.send(updatedExperience)
+      if (updatedUser) {
+        res.send(updatedUser)
       } else {
-        next(createHttpError(404, `user with id ${req.params.userId} not found!`))
+        next(createHttpError(404, `User with id ${req.params.userId} not found!`))
       }
     } else {
-      // 4. In case of either book not found or experience not found --> 404
-      next(createHttpError(404, `user not found!`))
+      next(createHttpError(404, `User with id ${req.params.userId} not found in request!`))
     }
   } catch (error) {
     next(error)
@@ -77,50 +139,24 @@ experiencesRouter.post("/:userId/experiences", async (req, res, next) => {
 
 experiencesRouter.put("/:userId/experiences/:expId", async (req, res, next) => {
   try {
-    const experience = req.body // Get the experience edit from the req.body
+    const update = req.body
+    const user = await UsersModel.findById(req.params.userId)
 
-    if (experience) {
-      // Find the experience by id and update it with the new experience data
-      const updatedExperience = await ExperiencesModel.findOneAndUpdate(
-        { "experiences._id": req.params.expId },
-        { $set: { "experiences.$": experience } },
-        { new: true, runValidators: true } // OPTIONS
-      )
+    if (user) {
+      console.log("user found")
+      const index = user.experiences.findIndex((experience) => experience._id.toString() === req.params.expId)
+      if (index !== -1) {
+        user.experiences[index] = {
+          ...user.experiences[index].toObject(),
+          ...update,
+          updatedAt: new Date()
+        }
 
-      if (updatedExperience) {
-        res.send(updatedExperience)
-      } else {
-        next(createHttpError(404, `experience with id ${req.params.expId} not found!`))
+        await user.save()
+        res.send(user)
       }
     } else {
-      next(createHttpError(404, `experience not found!`))
-    }
-  } catch (error) {
-    next(error)
-  }
-})
-
-// ----------------------------------------- adding experience image
-
-experiencesRouter.patch("/:userId/experiences/:expId/picture", async (req, res, next) => {
-  try {
-    const experienceImage = req.file // Get the experience picture from the req.file
-
-    if (experienceImage) {
-      // Find the experience by id and update it with the new experience data
-      const updatedExperience = await ExperiencesModel.findOneAndUpdate(
-        { "experiences._id": req.params.expId },
-        { $set: { "experiences.$": experienceImage } },
-        { new: true, runValidators: true } // OPTIONS
-      )
-
-      if (updatedExperience) {
-        res.send(updatedExperience)
-      } else {
-        next(createHttpError(404, `experience with id ${req.params.expId} not found!`))
-      }
-    } else {
-      next(createHttpError(404, `experience not found!`))
+      next(createHttpError(404, `experience ${req.params.expId} not found`))
     }
   } catch (error) {
     next(error)
@@ -129,7 +165,7 @@ experiencesRouter.patch("/:userId/experiences/:expId/picture", async (req, res, 
 
 experiencesRouter.delete("/:userId/experiences/:expId", async (req, res, next) => {
   try {
-    const updatedExperience = await ExperiencesModel.findByIdAndUpdate(
+    const updatedExperience = await UsersModel.findByIdAndUpdate(
       req.params.userId, // WHO
       { $pull: { experiences: { _id: req.params.expId } } }, // HOW
       { new: true } // OPTIONS
