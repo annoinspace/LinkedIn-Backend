@@ -81,6 +81,7 @@ postsRouter.post("/:userid", cloudinaryUpload, async (req, res, next) => {
       const newPost = new postsModel({
         ...req.body,
         image: req.file.path,
+        user: req.params.userid,
       });
       const { _id } = await newPost.save();
       res.status(201).send({ _id });
