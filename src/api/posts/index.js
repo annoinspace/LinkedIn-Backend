@@ -1,99 +1,135 @@
+// posts routes
 import express from "express";
-import postModel from "./model.js";
 import createHttpError from "http-errors";
-import q2m from "query-to-mongo";
+import postsModel from "./postsModel.js";
+import multer from "multer";
+import { CloudinaryStorage } from "multer-storage-cloudinary";
+import { v2 as cloudinary } from "cloudinary";
+
 const postsRouter = express.Router();
 
-// POST
-
-postsRouter.post("/", async (req, res, next) => {
-  try {
-    const newPost = new postModel(req.body);
-    const { _id } = await newPost.save();
-    res.status(201).send({ _id });
-  } catch (error) {
-    next(error);
-  }
-});
-
-// GET
+export const cloudinaryUpload = multer({
+  storage: new CloudinaryStorage({
+    cloudinary,
+    params: {
+      folder: "build-week/post-imgs",
+    },
+  }),
+}).single("post");
 
 postsRouter.get("/", async (req, res, next) => {
   try {
-    const mongoQuery = q2m(req.query);
-    const total = await postModel.countDocuments(mongoQuery.criteria);
-    console.log(total);
-    const posts = await postModel
-      .find(mongoQuery.criteria, mongoQuery.options.fields)
-      .populate({ path: "user", select: "name surname username pfp" })
-      .sort(mongoQuery.options.sort)
-      .skip(mongoQuery.options.skip)
-      .limit(mongoQuery.options.limit);
-    res.status(200).send({
-      links: mongoQuery.links(total),
-      total,
-      totalPages: Math.ceil(total / mongoQuery.options.limit),
-      posts,
-    });
-    // const posts = await postModel
-    //   .find({})
-    //   .populate({ path: "review", select: "comment rate" });
-    // res.send(posts);
-  } catch (error) {
-    next(error);
+    const posts = await postsModel
+      .find()
+      .populate({
+        path: "user",
+        select: "name surname username _id",
+      })
+      .populate({
+        path: "comments",
+      });
+    if (posts.length > 0) {
+      res.send(posts);
+    } else {
+      res.send("There are no posts.");
+    }
+  } catch (err) {
+    next(err);
   }
 });
 
-// GET SPECIFIC
-
-postsRouter.get("/:postId", async (req, res, next) => {
+postsRouter.get("/:postid", async (req, res, next) => {
   try {
-    const post = await postModel
-      .findById(req.params.postId)
-      .populate({ path: "user", select: "name surname username pfp" });
-
+    const post = await postsModel.findById(req.params.postid).populate({
+      path: "user",
+      select: "name surname username _id",
+    });
     if (post) {
       res.send(post);
     } else {
-      next(createHttpError(404, `post with id ${req.params.postId} not found`));
+      next(
+        createHttpError(404, `Post with ID ${req.params.postid} not found.`)
+      );
     }
-  } catch (error) {
-    next(error);
+  } catch (err) {
+    next(err);
   }
 });
 
-// PUT
-
-postsRouter.put("/:postId", async (req, res, next) => {
+postsRouter.get("/user/:userid", async (req, res, next) => {
   try {
-    const updatedpost = await postModel.findByIdAndUpdate(
-      req.params.postId,
-      req.body,
-      { new: true, runValidators: true }
-    );
+    const posts = await postsModel.find({ user: req.params.userid });
+    if (posts) {
+      res.send(posts);
+    }
+  } catch (err) {
+    next(err);
+  }
+});
 
-    if (updatedpost) {
-      res.send(updatedpost);
+postsRouter.post("/", cloudinaryUpload, async (req, res, next) => {
+  try {
+    if (req.file === undefined) {
+      const newPost = new postsModel({
+        ...req.body,
+        image: "http://picsum.photos/800/800",
+      });
+      const { _id } = await newPost.save();
+      res.status(201).send({ _id });
     } else {
-      next(createHttpError(404, `post with id ${req.params.postId} not found`));
+      const newPost = new postsModel({
+        ...req.body,
+        image: req.file.path,
+      });
+      const { _id } = await newPost.save();
+      res.status(201).send({ _id });
     }
-  } catch (error) {
-    next(error);
+  } catch (err) {
+    next(err);
   }
 });
 
-// DELETE
-
-postsRouter.delete("/:postId", async (req, res, next) => {
+postsRouter.put("/:postid", cloudinaryUpload, async (req, res, next) => {
   try {
-    const deletedpost = await postModel.findByIdAndDelete(req.params.postId);
-    if (deletedpost) {
+    if (req.file === undefined) {
+      const updatedPost = await postsModel.findByIdAndUpdate(
+        req.params.postid,
+        req.body,
+        { new: true, runValidators: true }
+      );
+      if (updatedPost) {
+        res.send(updatedPost);
+      }
+    } else {
+      const updatedPost = await postsModel.findByIdAndUpdate(
+        req.params.postid,
+        { ...req.body, image: req.file.path },
+        { new: true, runValidators: true }
+      );
+      if (updatedPost) {
+        res.send(updatedPost);
+      }
+    }
+  } catch (err) {
+    next(err);
+  }
+});
+
+postsRouter.delete("/:postid", async (req, res, next) => {
+  try {
+    const deletedPost = await postsModel.findByIdAndDelete(req.params.postid);
+    if (deletedPost) {
       res.status(204).send();
     } else {
-      next(createHttpError(404, `post with id ${req.params.postId} not found`));
+      next(
+        createHttpError(
+          404,
+          `Post with ID ${req.params.postid} not found, cannot delete.`
+        )
+      );
     }
-  } catch (error) {
-    next(error);
+  } catch (err) {
+    next(err);
   }
 });
 
