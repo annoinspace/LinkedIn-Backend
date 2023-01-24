@@ -6,6 +6,8 @@ import { createGzip } from "zlib";
 import multer from "multer";
 import { CloudinaryStorage } from "multer-storage-cloudinary";
 import { v2 as cloudinary } from "cloudinary";
+import getPDFReadableStream from "./pdf-tools.js";
+
 const usersRouter = express.Router();
 
 export const cloudinaryUpload = multer({
@@ -110,6 +112,20 @@ usersRouter.delete("/:userId", async (req, res, next) => {
 //     });
 //   }
 // });
+
+usersRouter.get("/:userId/cv", async (req, response, next) => {
+  res.setHeader("Content-Disposition", "attachment; filename=cv.pdf");
+  try {
+    const user = await usersModel.findById(req.params.userId);
+    const source = await getPDFReadableStream(user);
+    const destination = response;
+    pipeline(source, destination, (err) => {
+      if (err) console.log(err);
+    });
+  } catch (err) {
+    next(err);
+  }
+});
 
 // POST
 
