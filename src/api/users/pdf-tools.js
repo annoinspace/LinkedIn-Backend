@@ -25,7 +25,53 @@ const getPDFReadableStream = async (data) => {
         style: "header",
       },
       {
+        text: "Current job" + data.job ? data.job : "No current job.",
+        alignment: "center",
+      },
+      {
         image: "main",
+        width: 150,
+        alignment: "center",
+        margin: [0, 10, 0, 10],
+      },
+      { text: "Experiences:", fontSize: 15, margin: [0, 10, 0, 10] },
+      {
+        ul: [
+          data.experiences?.map(function (experience, index) {
+            return {
+              ul: [
+                experience.role +
+                  " in " +
+                  experience.company +
+                  "." +
+                  "\n" +
+                  "Description: " +
+                  experience.description +
+                  "\n" +
+                  "Area: " +
+                  experience.area,
+              ],
+              margin: [0, 3, 0, 3],
+            };
+          }),
+        ],
+
+        lineHeight: 2,
+      },
+
+      {
+        text:
+          "Interests" + data.interests.length > 0
+            ? data.interests
+            : "No interests has been added yet.",
+        margin: [0, 30, 0, 10],
+      },
+      {
+        text:
+          "Education" + data.interests.length > 0
+            ? data.interests
+            : "No education has been added yet.",
+        margin: [0, 10, 0, 10],
       },
     ],
     images: {

@@ -113,12 +113,12 @@ usersRouter.delete("/:userId", async (req, res, next) => {
 //   }
 // });
 
-usersRouter.get("/:userId/cv", async (req, response, next) => {
+usersRouter.get("/:userId/cv", async (req, res, next) => {
   res.setHeader("Content-Disposition", "attachment; filename=cv.pdf");
   try {
     const user = await usersModel.findById(req.params.userId);
     const source = await getPDFReadableStream(user);
-    const destination = response;
+    const destination = res;
     pipeline(source, destination, (err) => {
       if (err) console.log(err);
     });
@@ -139,7 +139,7 @@ usersRouter.post("/", async (req, res, next) => {
   }
 });
 
-//
+//PFP post
 usersRouter.post("/:userId/pfp", cloudinaryUpload, async (req, res, next) => {
   const updatedUser = await usersModel.findByIdAndUpdate(req.params.userId, {
     ...req.body,
@@ -148,5 +148,20 @@ usersRouter.post("/:userId/pfp", cloudinaryUpload, async (req, res, next) => {
   const { _id } = await updatedUser.save();
   res.status(201).send({ _id });
 });
-
+//LOGIN
+usersRouter.get("/login", async (req, res, next) => {
+  try {
+    const user = await usersModel.find({
+      username: req.query.username,
+      password: req.query.password,
+    });
+    if (user) {
+      res.send(user);
+    } else {
+      ("Wrong password or username. Try again!");
+    }
+  } catch (error) {
+    next(error);
+  }
+});
 export default usersRouter;
