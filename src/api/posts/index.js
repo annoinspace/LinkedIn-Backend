@@ -67,11 +67,12 @@ postsRouter.get("/user/:userid", async (req, res, next) => {
   }
 });
 
-postsRouter.post("/", cloudinaryUpload, async (req, res, next) => {
+postsRouter.post("/:userid", cloudinaryUpload, async (req, res, next) => {
   try {
     if (req.file === undefined) {
       const newPost = new postsModel({
         ...req.body,
+        user: req.params.userid,
         image: "http://picsum.photos/800/800",
       });
       const { _id } = await newPost.save();
@@ -80,6 +81,7 @@ postsRouter.post("/", cloudinaryUpload, async (req, res, next) => {
       const newPost = new postsModel({
         ...req.body,
         image: req.file.path,
+        user: req.params.userid,
       });
       const { _id } = await newPost.save();
       res.status(201).send({ _id });

@@ -47,8 +47,7 @@ mongoose.connect(process.env.MONGO_URL);
 
 // -------------------- use mongoose server after connecting to mongo
 
-mongoose.set("strictQuery", false);
-mongoose.connect(process.env.MONGO_URL);
+// mongoose.set("strictQuery", false);
 
 mongoose.connection.on("connected", () => {
   console.log("connected to mongo!");
