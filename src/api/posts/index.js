@@ -27,6 +27,11 @@ postsRouter.get("/", async (req, res, next) => {
       })
       .populate({
         path: "comments",
+        populate: {
+          path: "author",
+          model: "Users",
+          select: "name surname pfp job username"
+        },
       });
     if (posts.length > 0) {
       res.send(posts);

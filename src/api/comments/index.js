@@ -8,9 +8,11 @@ const commentsRouter = express.Router();
 
 commentsRouter.get("/:postid", async (req, res, next) => {
   try {
-    const comments = await commentsModel.find({
-      parentPost: req.params.postid,
-    });
+    const comments = await commentsModel
+      .find({
+        parentPost: req.params.postid,
+      })
+
     if (comments) {
       res.send(comments);
     } else {
