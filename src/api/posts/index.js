@@ -67,11 +67,12 @@ postsRouter.get("/user/:userid", async (req, res, next) => {
   }
 });
 
-postsRouter.post("/", cloudinaryUpload, async (req, res, next) => {
+postsRouter.post("/:userid", cloudinaryUpload, async (req, res, next) => {
   try {
     if (req.file === undefined) {
       const newPost = new postsModel({
         ...req.body,
+        user: req.params.userid,
         image: "http://picsum.photos/800/800",
       });
       const { _id } = await newPost.save();
