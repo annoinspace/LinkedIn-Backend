@@ -140,10 +140,9 @@ usersRouter.post("/", async (req, res, next) => {
       const newUser = new usersModel(req.body);
       const { _id } = await newUser.save();
       res.status(201).send({ _id });
-    }
-    if (duplicate.length !== 0) {
+    } else {
       console.log(duplicate);
-      res.status(400).send("This username already exists!");
+      res.status(202).send("This username already exists!");
     }
   } catch (error) {
     next(error);
