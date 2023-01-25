@@ -8,10 +8,9 @@ const commentsRouter = express.Router();
 
 commentsRouter.get("/:postid", async (req, res, next) => {
   try {
-    const comments = await commentsModel
-      .find({
-        parentPost: req.params.postid,
-      })
+    const comments = await commentsModel.find({
+      parentPost: req.params.postid,
+    });
 
     if (comments) {
       res.send(comments);
@@ -72,6 +71,31 @@ commentsRouter.put("/:commentid", cloudinaryUpload, async (req, res, next) => {
         { new: true, runValidators: true }
       );
       res.send(updatedComment);
+    }
+  } catch (err) {
+    next(err);
+  }
+});
+
+commentsRouter.delete("/:commentid", async (req, res, next) => {
+  try {
+    const selectedComment = await commentsModel.findById(req.params.commentid);
+    const postId = selectedComment.parentPost[0];
+    const deletedComment = await commentsModel.findByIdAndDelete(
+      req.params.commentid
+    );
+    if (deletedComment) {
+      await postsModel.findByIdAndUpdate(postId, {
+        $pull: { comments: req.params.commentid },
+      });
+      res.status(204).send();
+    } else {
+      next(
+        createHttpError(
+          404,
+          `Comment with id ${req.params.commentid} not found.`
+        )
+      );
     }
   } catch (err) {
     next(err);
