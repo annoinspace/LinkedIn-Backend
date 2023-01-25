@@ -5,6 +5,124 @@ import UsersModel from "../users/model.js"
 import connectionsModel from "./connectionsModel.js"
 const connectionsRouter = express.Router()
 
+connectionsRouter.get("/:userId", async (req, res, next) => {
+  try {
+    const user = await connectionsModel
+      .findById(req.params.userId)
+      .populate({
+        path: "connections",
+        select: "name surname"
+      })
+      .populate({
+        path: "pending",
+        select: "name surname"
+      })
+    if (user) {
+      console.log("user from get", user)
+      if (user) {
+        res.send(user)
+      } else {
+        res.send({ message: `user does not have any connections yet!` })
+      }
+    } else {
+      res.send({ message: `come back once you've added some connections!` })
+    }
+  } catch (error) {
+    next(error)
+  }
+})
+
+connectionsRouter.post("/:userId", async (req, res, next) => {
+  try {
+    const user = await UsersModel.find({ _id: req.params.userId })
+
+    if (user) {
+      const personToConnectWith = req.body.connection
+      // const personToConnectWithObject = mongoose.Types.ObjectId(personToConnectWith)
+      console.log(personToConnectWith, "personToConnectWith")
+      const myUser = await connectionsModel.findById(req.params.userId).populate({
+        path: "connections",
+        select: "name surname"
+      })
+
+      if (myUser) {
+        myUser.connections.push(personToConnectWith)
+        myUser.save()
+        // check if the user I want to connect with has a connectionmodel, if not then create it
+        const checkingForTheOtherUser = await connectionsModel.findById(personToConnectWith).populate({
+          path: "connections",
+          select: "name surname"
+        })
+        if (!checkingForTheOtherUser) {
+          const newConnectionOtherUser = new connectionsModel(
+            { _id: mongoose.Types.ObjectId(personToConnectWith) },
+            { $push: { connections: req.params.userId } },
+            { new: true, runValidators: true }
+          )
+          newConnectionOtherUser.save()
+        } else {
+          checkingForTheOtherUser.connections.push(req.params.userId)
+          checkingForTheOtherUser.save()
+        }
+        res.status(201).send({ message: `user added to your connections` })
+        // res.send()
+      } else {
+        const newConnection = new connectionsModel(
+          { _id: mongoose.Types.ObjectId(req.params.userId) },
+          { $push: { connections: personToConnectWith } },
+          { new: true, runValidators: true }
+        )
+        const connection = await newConnection.save()
+
+        // check if the user I want to connect with has a connectionmodel, if not then create it
+        const checkingForTheOtherUser = await connectionsModel.findById(personToConnectWith).populate({
+          path: "connections",
+          select: "name surname"
+        })
+        if (!checkingForTheOtherUser) {
+          const newConnectionOtherUser = new connectionsModel(
+            { _id: mongoose.Types.ObjectId(personToConnectWith) },
+            { $push: { connections: req.params.userId } },
+            { new: true, runValidators: true }
+          )
+          newConnectionOtherUser.save()
+        } else {
+          checkingForTheOtherUser.connections.push(req.params.userId)
+          checkingForTheOtherUser.save()
+          console.log(connection, "updated connection")
+          res.status(201).send(connection)
+        }
+      }
+    } else {
+      res.send({ message: `something went terribly wrong :(` })
+    }
+  } catch (error) {
+    next(error)
+  }
+})
+
+connectionsRouter.delete("/:userId/:connectionId", async (req, res, next) => {
+  try {
+    console.log("userId", req.params.userId)
+    console.log("connectionId", req.params.connectionId)
+
+    const myUserUpdate = await connectionsModel
+      .findByIdAndUpdate(req.params.userId, { $pull: { connections: { _id: req.params.connectionId } } }, { new: true })
+      .populate({
+        path: "connections",
+        select: "name surname"
+      })
+    console.log("connections update", myUserUpdate)
+    if (myUserUpdate) {
+      res.send(myUserUpdate)
+    } else {
+      next(createHttpError(404, `could not remove connection ${req.params.connectionId} `))
+    }
+  } catch (error) {
+    next(error)
+  }
+})
+
 // check if you have any requests
 // connectionsRouter.get("/requests/:userId", async (req, res, next) => {
 //   try {
@@ -82,90 +200,5 @@ const connectionsRouter = express.Router()
 //     next(error)
 //   }
 // })
-
-connectionsRouter.get("/:userId", async (req, res, next) => {
-  try {
-    const user = await connectionsModel
-      .findById(req.params.userId)
-      .populate({
-        path: "connections",
-        select: "name surname"
-      })
-      .populate({
-        path: "pending",
-        select: "name surname"
-      })
-    if (user) {
-      console.log("user from get", user)
-      if (user) {
-        res.send(user)
-      } else {
-        res.send({ message: `user does not have any connections yet!` })
-      }
-    } else {
-      res.send({ message: `come back once you've added some connections!` })
-    }
-  } catch (error) {
-    next(error)
-  }
-})
-
-connectionsRouter.post("/:userId", async (req, res, next) => {
-  try {
-    const user = await UsersModel.find({ _id: req.params.userId })
-
-    if (user) {
-      const person = req.body.connection
-      // const personObject = mongoose.Types.ObjectId(person)
-      console.log(person, "person")
-      const userConnections = await connectionsModel.findById(req.params.userId).populate({
-        path: "connections",
-        select: "name surname"
-      })
-
-      if (userConnections) {
-        userConnections.connections.push(person)
-
-        userConnections.save()
-
-        res.status(201).send({ message: `user added to your connections` })
-        // res.send()
-      } else {
-        const newConnection = new connectionsModel(
-          { _id: mongoose.Types.ObjectId(req.params.userId) },
-          { $push: { connections: person } },
-          { new: true, runValidators: true }
-        )
-        const connection = await newConnection.save()
-        console.log(connection, "updated connection")
-        res.status(201).send(connection)
-      }
-    }
-  } catch (error) {
-    next(error)
-  }
-})
-
-connectionsRouter.delete("/:userId/:connectionId", async (req, res, next) => {
-  try {
-    console.log("userId", req.params.userId)
-    console.log("connectionId", req.params.connectionId)
-
-    const userConnectionsUpdate = await connectionsModel
-      .findByIdAndUpdate(req.params.userId, { $pull: { connections: { _id: req.params.connectionId } } }, { new: true })
-      .populate({
-        path: "connections",
-        select: "name surname"
-      })
-    console.log("connections update", userConnectionsUpdate)
-    if (userConnectionsUpdate) {
-      res.send(userConnectionsUpdate)
-    } else {
-      next(createHttpError(404, `could not remove connection ${req.params.connectionId} `))
-    }
-  } catch (error) {
-    next(error)
-  }
-})
 
 export default connectionsRouter
