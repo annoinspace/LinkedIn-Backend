@@ -8,7 +8,12 @@ const userSchema = new Schema({
   username: { type: String, required: true },
   password: { type: String, required: true },
   //additional
-  pfp: { type: String, required: false, default: "" },
+  pfp: {
+    type: String,
+    required: false,
+    default:
+      "https://res.cloudinary.com/dp3i1dce4/image/upload/v1674603395/blank-profile-picture-973460-2_mz4hn1.png",
+  },
   bio: { type: String, required: false, default: "" },
   background: { type: String, required: false, default: "" },
   posts: [

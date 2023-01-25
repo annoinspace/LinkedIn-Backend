@@ -155,10 +155,10 @@ usersRouter.get("/login", async (req, res, next) => {
       username: req.query.username,
       password: req.query.password,
     });
-    if (user) {
-      res.send(user);
+    if (user.length(0)) {
+      res.send("Wrong!");
     } else {
-      ("Wrong password or username. Try again!");
+      res.send(user);
     }
   } catch (error) {
     next(error);
