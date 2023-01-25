@@ -63,33 +63,6 @@ experiencesRouter.get("/:userId/experiences/csv", async (req, res, next) => {
   }
 })
 
-// experiencesRouter.get("/:userId/experiences/csv", async (req, res, next) => {
-//   try {
-//     let source = await UsersModel.findById(req.params.userId, {
-//       _id: 0
-//     })
-//     source = JSON.stringify(source)
-//     if (source) {
-//       if (source.length === 0) {
-//         res.send(`User ${source.username} has no experiences`)
-//       } else {
-//         res.setHeader("Content-Disposition", "attachment; filename=experiences.csv")
-//         const transform = new json2csv.Transform({ fields: ["role", "company"] })
-//         const destination = res
-//         pipeline(source, transform, destination, (err) => {
-//           if (err) console.log(err)
-//         })
-//         res.send()
-//       }
-//     } else {
-//       next(createHttpError(404, `user with id ${req.params.userId} not found!`))
-//     }
-//   } catch (error) {
-//     console.log(error)
-//     next(error)
-//   }
-// })
-
 experiencesRouter.get("/:userId/experiences/:expId", async (req, res, next) => {
   try {
     const user = await UsersModel.findById(req.params.userId)
