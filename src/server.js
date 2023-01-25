@@ -33,7 +33,7 @@ server.use("/posts", postsRouter)
 server.use("/users", usersRouter)
 server.use("/users", experiencesRouter)
 server.use("/comments", commentsRouter)
-server.use("/connections", connectionsRouter)
+server.use("/mynetwork", connectionsRouter)
 
 server.use(badRequestHandler)
 server.use(notFoundHandler)
