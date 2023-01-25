@@ -131,9 +131,20 @@ usersRouter.get("/:userId/cv", async (req, res, next) => {
 
 usersRouter.post("/", async (req, res, next) => {
   try {
-    const newUser = new usersModel(req.body);
-    const { _id } = await newUser.save();
-    res.status(201).send({ _id });
+    const duplicate = await usersModel.find({
+      username: req.body.username,
+    });
+    console.log(duplicate);
+    if (duplicate.length === 0) {
+      console.log(duplicate);
+      const newUser = new usersModel(req.body);
+      const { _id } = await newUser.save();
+      res.status(201).send({ _id });
+    }
+    if (duplicate.length !== 0) {
+      console.log(duplicate);
+      res.status(400).send("This username already exists!");
+    }
   } catch (error) {
     next(error);
   }
