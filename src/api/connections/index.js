@@ -45,31 +45,43 @@ connectionsRouter.post("/:userId", async (req, res, next) => {
         select: "name surname"
       })
 
+      // checking if the user already exists
+
       if (myUser) {
-        myUser.connections.push(personToConnectWith)
-        myUser.save()
-        // check if the user I want to connect with has a connectionmodel, if not then create it
-        const checkingForTheOtherUser = await connectionsModel.findById(personToConnectWith).populate({
-          path: "connections",
-          select: "name surname"
-        })
-        if (!checkingForTheOtherUser) {
-          const newConnectionOtherUser = new connectionsModel(
-            { _id: mongoose.Types.ObjectId(personToConnectWith) },
-            { $push: { connections: req.params.userId } },
-            { new: true, runValidators: true }
-          )
-          newConnectionOtherUser.save()
+        const index = myUser.connections.findIndex((connection) => connection._id.toString() === personToConnectWith)
+        if (index !== -1) {
+          console.log("-----------------------------------------INDEX=", index)
+          console.log("user connection exists")
+          res.send({ message: `connection already exists` })
         } else {
-          checkingForTheOtherUser.connections.push(req.params.userId)
-          checkingForTheOtherUser.save()
+          myUser.connections.push(personToConnectWith)
+          myUser.save()
+          // check if the user I want to connect with has a connectionmodel, if not then create it
+          const checkingForTheOtherUser = await connectionsModel.findById(personToConnectWith).populate({
+            path: "connections",
+            select: "name surname"
+          })
+          if (!checkingForTheOtherUser) {
+            console.log("-----------------------------------------User exists, creating other user")
+            const newConnectionOtherUser = new connectionsModel(
+              { _id: mongoose.Types.ObjectId(personToConnectWith) },
+              { $set: { connections: req.params.userId } },
+              { new: true, runValidators: true }
+            )
+            newConnectionOtherUser.save()
+          } else {
+            checkingForTheOtherUser.connections.push(req.params.userId)
+            checkingForTheOtherUser.save()
+          }
+
+          res.status(201).send({ message: `user added to your connections` })
         }
-        res.status(201).send({ message: `user added to your connections` })
-        // res.send()
-      } else {
+      }
+      if (!myUser) {
+        console.log("-----------------------------------------User does not exist")
         const newConnection = new connectionsModel(
           { _id: mongoose.Types.ObjectId(req.params.userId) },
-          { $push: { connections: personToConnectWith } },
+          { $set: { connections: personToConnectWith } },
           { new: true, runValidators: true }
         )
         const connection = await newConnection.save()
@@ -79,10 +91,12 @@ connectionsRouter.post("/:userId", async (req, res, next) => {
           path: "connections",
           select: "name surname"
         })
+
         if (!checkingForTheOtherUser) {
+          console.log("-----------------------------------------Other User does not exist, creating it now")
           const newConnectionOtherUser = new connectionsModel(
             { _id: mongoose.Types.ObjectId(personToConnectWith) },
-            { $push: { connections: req.params.userId } },
+            { $set: { connections: req.params.userId } },
             { new: true, runValidators: true }
           )
           newConnectionOtherUser.save()
@@ -90,9 +104,11 @@ connectionsRouter.post("/:userId", async (req, res, next) => {
           checkingForTheOtherUser.connections.push(req.params.userId)
           checkingForTheOtherUser.save()
           console.log(connection, "updated connection")
-          res.status(201).send(connection)
         }
+        res.status(201).send({ message: `user added to your connections` })
       }
+
+      console.log("users connection checks finished")
     } else {
       res.send({ message: `something went terribly wrong :(` })
     }
