@@ -21,8 +21,7 @@ const userSchema = new Schema({
   job: { type: String, required: false, default: "" },
   education: { type: String, required: false, default: "" },
   location: { type: String, required: false, default: "" },
-  experiences: [ExperienceSchema],
-  connections: [{ type: Schema.Types.ObjectId, ref: "Connection" }]
+  experiences: [ExperienceSchema]
 })
 
 export default model("Users", userSchema)
