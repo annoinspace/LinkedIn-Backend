@@ -9,7 +9,7 @@ connectionsRouter.get("/:userId", async (req, res, next) => {
   try {
     const user = await connectionsModel.findById(req.params.userId).populate({
       path: "connections",
-      select: "name surname pfp"
+      select: "name surname pfp job"
     })
 
     if (user) {
@@ -36,7 +36,7 @@ connectionsRouter.post("/:userId", async (req, res, next) => {
 
       const myUser = await connectionsModel.findById(req.params.userId).populate({
         path: "connections",
-        select: "name surname pfp"
+        select: "name surname pfp job"
       })
 
       // checking if the user already exists
@@ -52,7 +52,7 @@ connectionsRouter.post("/:userId", async (req, res, next) => {
           // check if the user I want to connect with has a connectionmodel, if not then create it
           const checkingForTheOtherUser = await connectionsModel.findById(personToConnectWith).populate({
             path: "connections",
-            select: "name surname pfp"
+            select: "name surname pfp job"
           })
           if (!checkingForTheOtherUser) {
             console.log("-----------------------------------------User exists, creating other user")
@@ -82,7 +82,7 @@ connectionsRouter.post("/:userId", async (req, res, next) => {
         // check if the user I want to connect with has a connectionmodel, if not then create it
         const checkingForTheOtherUser = await connectionsModel.findById(personToConnectWith).populate({
           path: "connections",
-          select: "name surname pfp"
+          select: "name surname pfp job"
         })
 
         if (!checkingForTheOtherUser) {
