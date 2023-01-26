@@ -117,20 +117,21 @@ connectionsRouter.post("/:userId", async (req, res, next) => {
 
 connectionsRouter.delete("/:userId/:connectionId", async (req, res, next) => {
   try {
-    console.log("userId", req.params.userId)
-    console.log("connectionId", req.params.connectionId)
+    const connectionId = mongoose.Types.ObjectId(req.params.connectionId)
+    console.log("------------------------------------connection", connectionId)
+    const userId = mongoose.Types.ObjectId(req.params.userId)
+    console.log("------------------------------------my userId", userId)
 
-    const myUserUpdate = await connectionsModel
-      .findByIdAndUpdate(req.params.userId, { $pull: { connections: { _id: req.params.connectionId } } }, { new: true })
-      .populate({
-        path: "connections",
-        select: "name surname"
-      })
-    console.log("connections update", myUserUpdate)
-    if (myUserUpdate) {
-      res.send(myUserUpdate)
+    const myUserConnectionDeleted = await connectionsModel.findOneAndUpdate(
+      { user: userId },
+      { $pull: { connections: { _id: connectionId } } },
+      { new: true }
+    )
+
+    if (myUserConnectionDeleted) {
+      res.status(200).json({ message: "Connection successfully deleted." })
     } else {
-      next(createHttpError(404, `could not remove connection ${req.params.connectionId} `))
+      next(createHttpError(404, `Could not remove connection ${req.params.connectionId}`))
     }
   } catch (error) {
     next(error)
