@@ -113,10 +113,7 @@ connectionsRouter.post("/:userId", async (req, res, next) => {
 connectionsRouter.delete("/:userId/:connectionId", async (req, res, next) => {
   try {
     const connectionId = mongoose.Types.ObjectId(req.params.connectionId)
-    console.log("------------------------------------connection", connectionId)
     const userId = mongoose.Types.ObjectId(req.params.userId)
-    console.log("------------------------------------my userId", userId)
-
     const myUserConnectionDeleted = await connectionsModel.findOneAndUpdate(
       { user: userId },
       { $pull: { connections: { _id: connectionId } } },
