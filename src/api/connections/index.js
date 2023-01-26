@@ -7,16 +7,11 @@ const connectionsRouter = express.Router()
 
 connectionsRouter.get("/:userId", async (req, res, next) => {
   try {
-    const user = await connectionsModel
-      .findById(req.params.userId)
-      .populate({
-        path: "connections",
-        select: "name surname"
-      })
-      .populate({
-        path: "pending",
-        select: "name surname"
-      })
+    const user = await connectionsModel.findById(req.params.userId).populate({
+      path: "connections",
+      select: "name surname pfp"
+    })
+
     if (user) {
       console.log("user from get", user)
       if (user) {
@@ -41,7 +36,7 @@ connectionsRouter.post("/:userId", async (req, res, next) => {
 
       const myUser = await connectionsModel.findById(req.params.userId).populate({
         path: "connections",
-        select: "name surname"
+        select: "name surname pfp"
       })
 
       // checking if the user already exists
@@ -57,7 +52,7 @@ connectionsRouter.post("/:userId", async (req, res, next) => {
           // check if the user I want to connect with has a connectionmodel, if not then create it
           const checkingForTheOtherUser = await connectionsModel.findById(personToConnectWith).populate({
             path: "connections",
-            select: "name surname"
+            select: "name surname pfp"
           })
           if (!checkingForTheOtherUser) {
             console.log("-----------------------------------------User exists, creating other user")
@@ -87,7 +82,7 @@ connectionsRouter.post("/:userId", async (req, res, next) => {
         // check if the user I want to connect with has a connectionmodel, if not then create it
         const checkingForTheOtherUser = await connectionsModel.findById(personToConnectWith).populate({
           path: "connections",
-          select: "name surname"
+          select: "name surname pfp"
         })
 
         if (!checkingForTheOtherUser) {
