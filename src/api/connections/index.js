@@ -38,8 +38,7 @@ connectionsRouter.post("/:userId", async (req, res, next) => {
 
     if (user) {
       const personToConnectWith = req.body.connection
-      // const personToConnectWithObject = mongoose.Types.ObjectId(personToConnectWith)
-      console.log(personToConnectWith, "personToConnectWith")
+
       const myUser = await connectionsModel.findById(req.params.userId).populate({
         path: "connections",
         select: "name surname"
@@ -50,7 +49,6 @@ connectionsRouter.post("/:userId", async (req, res, next) => {
       if (myUser) {
         const index = myUser.connections.findIndex((connection) => connection._id.toString() === personToConnectWith)
         if (index !== -1) {
-          console.log("-----------------------------------------INDEX=", index)
           console.log("user connection exists")
           res.send({ message: `connection already exists` })
         } else {
