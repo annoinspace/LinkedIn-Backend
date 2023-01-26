@@ -30,7 +30,7 @@ postsRouter.get("/", async (req, res, next) => {
         populate: {
           path: "author",
           model: "Users",
-          select: "name surname pfp job username"
+          select: "name surname pfp job username",
         },
       });
     if (posts.length > 0) {
@@ -78,7 +78,6 @@ postsRouter.post("/:userid", cloudinaryUpload, async (req, res, next) => {
       const newPost = new postsModel({
         ...req.body,
         user: req.params.userid,
-        image: "http://picsum.photos/800/800",
       });
       const { _id } = await newPost.save();
       res.status(201).send({ _id });
