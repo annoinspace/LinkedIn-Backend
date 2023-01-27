@@ -33,6 +33,7 @@ connectionsRouter.post("/:userId", async (req, res, next) => {
 
     if (user) {
       const personToConnectWith = req.body.connection
+      const personToConnectWithMongoID = mongoose.Types.ObjectId(req.body.connection)
 
       const myUser = await connectionsModel.findById(req.params.userId).populate({
         path: "connections",
@@ -66,40 +67,40 @@ connectionsRouter.post("/:userId", async (req, res, next) => {
             checkingForTheOtherUser.connections.push(req.params.userId)
             checkingForTheOtherUser.save()
           }
-
-          res.status(201).send({ message: `user added to your connections` })
+          console.log("-----------------------------------------connections created")
+          res.status(201).send(myUser)
         }
       }
-      if (!myUser) {
-        console.log("-----------------------------------------User does not exist")
-        const newConnection = new connectionsModel(
-          { _id: mongoose.Types.ObjectId(req.params.userId) },
-          { $set: { connections: personToConnectWith } },
-          { new: true, runValidators: true }
-        )
-        const connection = await newConnection.save()
+      // if (!myUser) {
+      //   console.log("-----------------------------------------User does not exist")
+      //   const newConnection = new connectionsModel(
+      //     { _id: mongoose.Types.ObjectId(req.params.userId) },
+      //     { $set: { connections: personToConnectWith } },
+      //     { new: true, runValidators: true }
+      //   )
+      //   const connection = await newConnection.save()
 
-        // check if the user I want to connect with has a connectionmodel, if not then create it
-        const checkingForTheOtherUser = await connectionsModel.findById(personToConnectWith).populate({
-          path: "connections",
-          select: "name surname pfp job"
-        })
+      //   // check if the user I want to connect with has a connectionmodel, if not then create it
+      //   const checkingForTheOtherUser = await connectionsModel.findById(personToConnectWith).populate({
+      //     path: "connections",
+      //     select: "name surname pfp job"
+      //   })
 
-        if (!checkingForTheOtherUser) {
-          console.log("-----------------------------------------Other User does not exist, creating it now")
-          const newConnectionOtherUser = new connectionsModel(
-            { _id: mongoose.Types.ObjectId(personToConnectWith) },
-            { $set: { connections: req.params.userId } },
-            { new: true, runValidators: true }
-          )
-          newConnectionOtherUser.save()
-        } else {
-          checkingForTheOtherUser.connections.push(req.params.userId)
-          checkingForTheOtherUser.save()
-          console.log(connection, "updated connection")
-        }
-        res.status(201).send({ message: `user added to your connections` })
-      }
+      //   if (!checkingForTheOtherUser) {
+      //     console.log("-----------------------------------------Other User does not exist, creating it now")
+      //     const newConnectionOtherUser = new connectionsModel(
+      //       { _id: mongoose.Types.ObjectId(personToConnectWith) },
+      //       { $set: { connections: req.params.userId } },
+      //       { new: true, runValidators: true }
+      //     )
+      //     newConnectionOtherUser.save()
+      //   } else {
+      //     checkingForTheOtherUser.connections.push(req.params.userId)
+      //     checkingForTheOtherUser.save()
+      //     console.log(connection, "updated connection")
+      //   }
+      //   res.status(201).send({ message: `user added to your connections` })
+      // }
 
       console.log("users connection checks finished")
     } else {
