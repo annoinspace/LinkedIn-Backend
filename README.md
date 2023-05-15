@@ -1,4 +1,4 @@
-Group Project building LinkedIn Backend
+Team Project building LinkedIn Backend
 
 **Link to Frontend: https://linked-in-fe-template.vercel.app/**
 
